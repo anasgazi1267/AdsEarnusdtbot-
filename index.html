@@ -1,13 +1,10 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta name="monetag" content="76bc307bf1d9c2deb452910e79adab75">
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
     <title>Ads Earn USDT</title>
     
-    <meta name="monetag" content="76bc307bf1d9c2deb452910e79adab75">
-
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
     <style>
         :root {
@@ -466,7 +463,7 @@
 
             <div id="tasks-view" class="view">
                 <h2 class="section-title">Earning Tasks</h2>
-                <div class="task-card" onclick="showAd('rewardedInterstitial')">
+                <div class="task-card" onclick="showRewardedInterstitial()">
                     <div class="task-icon"><i class="fa-solid fa-rectangle-ad"></i></div>
                     <div class="task-details">
                         <h3>Rewarded Interstitial</h3>
@@ -474,19 +471,11 @@
                     </div>
                     <div class="task-arrow"><i class="fa-solid fa-play"></i></div>
                 </div>
-                <div class="task-card" onclick="showAd('rewardedPopup')">
+                <div class="task-card" onclick="showRewardedPopup()">
                     <div class="task-icon"><i class="fa-solid fa-window-restore"></i></div>
                     <div class="task-details">
                         <h3>Rewarded Popup</h3>
                         <p>View a popup ad for quick points.</p>
-                    </div>
-                    <div class="task-arrow"><i class="fa-solid fa-play"></i></div>
-                </div>
-                <div class="task-card" onclick="showAd('inPagePush')">
-                    <div class="task-icon"><i class="fa-solid fa-bell"></i></div>
-                    <div class="task-details">
-                        <h3>In-Page Push Ad</h3>
-                        <p>Click on a push notification to earn points.</p>
                     </div>
                     <div class="task-arrow"><i class="fa-solid fa-play"></i></div>
                 </div>
@@ -560,7 +549,6 @@
         let tgUser = null;
         const pointsPerAd = 1;
         const ratePerPoint = 0.05;
-        let adInterval;
 
         // --- Admin & Minimum Withdrawal Settings (You can change these values) ---
         const ADMIN_USER_ID = '7390932497'; // আপনার অ্যাডমিন আইডি
@@ -625,54 +613,43 @@
 
         // --- Start Automatic Ads ---
         function startAutomaticAds() {
-            if (adInterval) clearInterval(adInterval);
-            adInterval = setInterval(() => {
-                showInAppInterstitial();
-            }, 30000); // 30 seconds
-            console.log("Automatic In-App Interstitial Ads started, interval: 30 seconds.");
-        }
-
-        // --- Show In-App Interstitial Ad ---
-        function showInAppInterstitial() {
             if (typeof show_9717747 === 'function') {
-                show_9717747().then(() => {
-                    console.log("In-App Interstitial Ad shown successfully.");
-                }).catch(e => {
-                    console.warn('In-App Interstitial Ad could not be shown:', e);
+                show_9717747({
+                  type: 'inApp',
+                  inAppSettings: {
+                    frequency: 2,
+                    capping: 0.1,
+                    interval: 30,
+                    timeout: 5,
+                    everyPage: false
+                  }
                 });
             } else {
                 console.warn("Monetag SDK not ready for In-App Ads.");
             }
         }
-        
-        // --- Show Different Ad Types ---
-        function showAd(type) {
+
+        // --- Show Rewarded Ads ---
+        function showRewardedInterstitial() {
             if (typeof show_9717747 !== 'function') {
                 return alert('Ad provider is not ready. Please try again in a moment.');
             }
-
-            switch(type) {
-                case 'rewardedInterstitial':
-                    show_9717747().then(() => {
-                        grantReward();
-                    }).catch(e => {
-                        alert('Ad could not be shown.');
-                    });
-                    break;
-                case 'rewardedPopup':
-                    show_9717747('pop').then(() => {
-                        grantReward();
-                    }).catch(e => {
-                        alert('Ad could not be shown.');
-                    });
-                    break;
-                case 'inPagePush':
-                    // In-page push ads are handled by the SDK automatically
-                    alert('In-Page Push Ads are shown automatically and do not require a button click to earn. Please check your page.');
-                    break;
-                default:
-                    alert('Invalid ad type.');
+            show_9717747().then(() => {
+                grantReward();
+            }).catch(e => {
+                alert('Ad could not be shown.');
+            });
+        }
+        
+        function showRewardedPopup() {
+            if (typeof show_9717747 !== 'function') {
+                return alert('Ad provider is not ready. Please try again in a moment.');
             }
+            show_9717747('pop').then(() => {
+                grantReward();
+            }).catch(e => {
+                alert('Ad could not be shown.');
+            });
         }
 
         // --- View Management ---
