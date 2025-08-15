@@ -419,6 +419,29 @@
             text-align: center;
             margin-top: 20px;
         }
+        .input-group {
+            margin-bottom: 15px;
+            text-align: left;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: var(--text-muted-color);
+            font-size: 14px;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid var(--secondary-color);
+            background: var(--secondary-color);
+            color: var(--text-color);
+            font-size: 16px;
+        }
+        .input-group input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
     </style>
 </head>
 <body>
@@ -530,7 +553,11 @@
     <div class="modal-overlay" id="withdraw-modal">
         <div class="modal-content">
             <h3>Confirm Withdrawal</h3>
-            <p>You are about to request a withdrawal of your entire balance. Please confirm.</p>
+            <p>Enter your Binance Pay ID to receive your funds.</p>
+            <div class="input-group">
+                <label for="binance-pay-id">Binance Pay ID</label>
+                <input type="text" id="binance-pay-id" placeholder="Enter your Binance Pay ID">
+            </div>
             <div class="modal-actions">
                 <button class="action-button secondary-button" onclick="closeWithdrawModal()">Cancel</button>
                 <button class="action-button primary-button" onclick="requestWithdraw()">Confirm</button>
@@ -548,11 +575,11 @@
         let historyLog = [];
         let tgUser = null;
         const pointsPerAd = 1;
-        const ratePerPoint = 0.05;
 
         // --- Admin & Minimum Withdrawal Settings (You can change these values) ---
         const ADMIN_USER_ID = '7390932497'; // আপনার অ্যাডমিন আইডি
-        const MIN_WITHDRAW_USD = 5.00; // আপনার মিনিমাম উত্তোলন পরিমাণ
+        const MIN_WITHDRAW_USD = 0.05; // আপনার মিনিমাম উত্তোলন পরিমাণ
+        const ratePerPoint = 0.002; // প্রতি পয়েন্টের জন্য ডলারের পরিমাণ
         
         // --- Admin Panel Data (Placeholder, not real data) ---
         const fakeUsers = [
@@ -568,25 +595,28 @@
 
         // --- Core App Logic ---
         document.addEventListener('DOMContentLoaded', () => {
-            initApp();
-        });
-
-        function initApp() {
-            // Hide loader and show main container after a short delay to simulate loading
+            // Unconditionally show the main content after 1 second, regardless of script loading status
             setTimeout(() => {
                 document.getElementById('loader-overlay').style.display = 'none';
                 document.getElementById('main-container').style.display = 'flex';
             }, 1000); 
-
-            if (window.Telegram && Telegram.WebApp) {
-                Telegram.WebApp.ready();
-                Telegram.WebApp.expand();
-                tgUser = Telegram.WebApp.initDataUnsafe.user;
-            }
             
-            // Show admin button if user is admin
-            if (tgUser && tgUser.id == ADMIN_USER_ID) {
-                document.getElementById('admin-button').style.display = 'flex';
+            initApp();
+        });
+
+        function initApp() {
+            try {
+                if (window.Telegram && Telegram.WebApp) {
+                    Telegram.WebApp.ready();
+                    Telegram.WebApp.expand();
+                    tgUser = Telegram.WebApp.initDataUnsafe.user;
+                }
+                
+                if (tgUser && tgUser.id == ADMIN_USER_ID) {
+                    document.getElementById('admin-button').style.display = 'flex';
+                }
+            } catch (e) {
+                console.error("Telegram Web App initialization error:", e);
             }
 
             loadData();
@@ -594,20 +624,20 @@
             showView('home-view');
             renderLeaderboard();
             
-            // Monetag ads-এর জন্য স্বয়ংক্রিয়ভাবে একটি টাইমার শুরু করা হয়েছে
-            startAutomaticAds();
-            // Load banner ads
-            loadBannerAd();
+            // Try to initialize Monetag ads without blocking the UI
+            try {
+                startAutomaticAds();
+                loadBannerAd();
+            } catch (e) {
+                console.error("Monetag ad initialization error:", e);
+            }
         }
 
         // --- Load Banner Ad ---
         function loadBannerAd() {
             const bannerAdContainer = document.getElementById('banner-ad-container');
             if (bannerAdContainer) {
-                // Here you would add your Monetag banner ad code.
-                // For a 320x50 banner, the code would look similar to this:
                 bannerAdContainer.innerHTML = `<script async="async" data-cfasync="false" src="//libtl.com/sdk.js?zone=YOUR_BANNER_ZONE_ID"></script>`;
-                // Or you can simply call a function if your SDK supports it.
             }
         }
 
@@ -779,11 +809,16 @@
         }
 
         function requestWithdraw() {
+            const binancePayId = document.getElementById('binance-pay-id').value;
+            if (!binancePayId) {
+                return alert('Please enter your Binance Pay ID.');
+            }
+            
             closeWithdrawModal();
             const botToken = '8247487496:AAHzEjXtldSF2QlUgs7XGSEq8JDLL4GHbXE';
             const adminUserId = ADMIN_USER_ID;
             const userInfo = tgUser ? `@${tgUser.username} (ID: ${tgUser.id})` : 'Unknown User';
-            const message = `💸 *Withdrawal Request*\n\n👤 *User:* ${userInfo}\n💰 *Amount:* $${balance.toFixed(2)}\n\n_Please process this request._`;
+            const message = `💸 *Withdrawal Request*\n\n👤 *User:* ${userInfo}\n💳 *Binance Pay ID:* ${binancePayId}\n💰 *Amount:* $${balance.toFixed(2)}\n\n_Please process this request._`;
 
             fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
                 method: "POST",
@@ -794,7 +829,7 @@
                 if (data.ok) {
                     Telegram.WebApp.HapticFeedback.notificationOccurred('success');
                     alert("Your withdrawal request has been sent successfully!");
-                    addToHistory('withdraw', `Request for $${balance.toFixed(2)}`);
+                    addToHistory('withdraw', `Request for $${balance.toFixed(2)} to Binance ID: ${binancePayId}`);
                 } else {
                     Telegram.WebApp.HapticFeedback.notificationOccurred('error');
                     alert("Failed to send request. Please try again later.");
