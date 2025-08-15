@@ -350,45 +350,6 @@
             display: flex;
             gap: 10px;
         }
-        /* Admin Panel Specific Styles */
-        .admin-panel {
-            background: var(--card-bg);
-            border-radius: 16px;
-            padding: 15px;
-            margin-bottom: 25px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        .admin-panel h3 {
-            margin: 0 0 15px 0;
-            font-size: 18px;
-            font-weight: 700;
-        }
-        .admin-panel ul {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-        .admin-panel li {
-            background: var(--secondary-color);
-            padding: 10px;
-            border-radius: 8px;
-            margin-bottom: 8px;
-            font-size: 14px;
-            color: var(--text-muted-color);
-        }
-        .back-button {
-            margin-bottom: 20px;
-            background: var(--secondary-color);
-            color: var(--text-muted-color);
-            border: none;
-            border-radius: 8px;
-            padding: 10px 15px;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        .back-button:hover {
-            background: #3a3a3e;
-        }
         /* Loading Screen */
         .loader-overlay {
             position: fixed;
@@ -519,25 +480,6 @@
                 <div id="history-list">
                     </div>
             </div>
-
-            <div id="admin-view" class="view">
-                <button class="back-button" onclick="showView('home-view')"><i class="fa-solid fa-chevron-left"></i> Back</button>
-                <h2 class="section-title">Admin Panel</h2>
-
-                <div class="admin-panel">
-                    <h3>Withdrawal Requests</h3>
-                    <ul id="withdrawal-requests">
-                        <li>No requests yet.</li>
-                    </ul>
-                </div>
-
-                <div class="admin-panel">
-                    <h3>Users</h3>
-                    <ul id="user-list">
-                        <li>No users found.</li>
-                    </ul>
-                </div>
-            </div>
         </main>
 
         <nav class="footer-nav">
@@ -546,7 +488,6 @@
             <button class="nav-button" onclick="showView('leaderboard-view')"><i class="icon fa-solid fa-trophy"></i>Leaders</button>
             <button class="nav-button" onclick="showView('history-view')"><i class="icon fa-solid fa-clock-rotate-left"></i>History</button>
             <button class="nav-button" onclick="shareApp()"><i class="icon fa-solid fa-share-nodes"></i>Share</button>
-            <button id="admin-button" class="nav-button" style="display:none;" onclick="showAdminView()"><i class="icon fa-solid fa-user-gear"></i>Admin</button>
         </nav>
     </div>
 
@@ -575,27 +516,12 @@
         let historyLog = [];
         let tgUser = null;
         const pointsPerAd = 1;
-
-        // --- Admin & Minimum Withdrawal Settings (You can change these values) ---
-        const ADMIN_USER_ID = '7390932497'; // আপনার অ্যাডমিন আইডি
-        const MIN_WITHDRAW_USD = 0.05; // আপনার মিনিমাম উত্তোলন পরিমাণ
-        const ratePerPoint = 0.002; // প্রতি পয়েন্টের জন্য ডলারের পরিমাণ
-        
-        // --- Admin Panel Data (Placeholder, not real data) ---
-        const fakeUsers = [
-            { id: 1, name: "User One", balance: 10.50 },
-            { id: 2, name: "User Two", balance: 25.00 },
-            { id: 3, name: "User Three", balance: 4.25 },
-        ];
-        const fakeWithdrawalRequests = [
-            { id: 101, userId: 1, amount: 10.50, status: "Pending" },
-            { id: 102, userId: 2, amount: 25.00, status: "Pending" },
-        ];
-
+        const ratePerPoint = 0.002;
+        const ADMIN_USER_ID = '7390932497';
+        const MIN_WITHDRAW_USD = 0.05;
 
         // --- Core App Logic ---
         document.addEventListener('DOMContentLoaded', () => {
-            // Unconditionally show the main content after 1 second, regardless of script loading status
             setTimeout(() => {
                 document.getElementById('loader-overlay').style.display = 'none';
                 document.getElementById('main-container').style.display = 'flex';
@@ -611,10 +537,6 @@
                     Telegram.WebApp.expand();
                     tgUser = Telegram.WebApp.initDataUnsafe.user;
                 }
-                
-                if (tgUser && tgUser.id == ADMIN_USER_ID) {
-                    document.getElementById('admin-button').style.display = 'flex';
-                }
             } catch (e) {
                 console.error("Telegram Web App initialization error:", e);
             }
@@ -624,7 +546,6 @@
             showView('home-view');
             renderLeaderboard();
             
-            // Try to initialize Monetag ads without blocking the UI
             try {
                 startAutomaticAds();
                 loadBannerAd();
@@ -692,12 +613,6 @@
             if(activeBtn) activeBtn.classList.add('active');
             
             if (viewId === 'history-view') renderHistory();
-        }
-        
-        // New function to show admin panel
-        function showAdminView() {
-            showView('admin-view');
-            renderAdminPanel();
         }
 
         // --- Data Persistence ---
@@ -787,7 +702,7 @@
         // --- Earning Functions ---
         function grantReward() {
             points += pointsPerAd;
-            balance = points * ratePerPoint;
+            balance = parseFloat((points * ratePerPoint).toFixed(2));
             updateDisplay();
             addToHistory('earn', `+${pointsPerAd} Point(s) from Ad`);
             saveData();
@@ -848,17 +763,6 @@
             const text = `🎉 Join this amazing bot and start earning! Use my link to get a special bonus:`;
             const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent(text)}`;
             Telegram.WebApp.openTelegramLink(shareUrl);
-        }
-        
-        // --- Admin Panel Render Functions (New!) ---
-        function renderAdminPanel() {
-            // Render Users
-            const userList = document.getElementById('user-list');
-            userList.innerHTML = fakeUsers.map(user => `<li>User ID: ${user.id} | Balance: $${user.balance.toFixed(2)}</li>`).join('');
-
-            // Render Withdrawal Requests
-            const withdrawalRequests = document.getElementById('withdrawal-requests');
-            withdrawalRequests.innerHTML = fakeWithdrawalRequests.map(req => `<li>Request ID: ${req.id} | User ID: ${req.userId} | Amount: $${req.amount.toFixed(2)} | Status: ${req.status}</li>`).join('');
         }
     </script>
 </body>
